@@ -102,7 +102,7 @@ class Cliente:
                 elif msg[1] == self.arq_pedido:
                     self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     self.tcp.connect(self.dest)
-                    with open(self.arq_pedido, 'wb') as file:
+                    with open(self.nome + '/' + self.arq_pedido, 'wb') as file:
                         print('Recebendo ' + self.arq_pedido)
                         pacote = self.tcp.recv(1024)
                         while pacote:
@@ -119,6 +119,8 @@ class Cliente:
         while self.nome == ''  or ':' in self.nome:
             inp = input('Nome inválido, digite novamente:')
             self.nome = inp.split(sep=':')[0]
+        if not os.path.exists(self.nome):
+            os.makedirs(self.nome)
         msg = 'USER:'+self.nome
         self.udp.sendto (msg.encode(), self.dest)
         self.clientes = [inp.split(sep=':')[0]]
