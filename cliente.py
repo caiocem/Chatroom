@@ -1,11 +1,12 @@
 # Dupla:
-# Caio Henrici - XXXXX
+# Caio Henrici - 92558
 # Rodrigo Chichorro - 92535
 
 import socket
 import time
 import threading
-import random 
+import random
+import os
 
 class Cliente:
     def __init__(self):
@@ -19,11 +20,12 @@ class Cliente:
         self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.arq_pedido = ''
         self.aberto = True
+        self.server_aberto = True
 
     def send (self):
         while self.aberto:
             msg = input()
-
+            
             if msg == '/list':
                 self.udp.sendto('LIST'.encode(), self.dest)
 
@@ -33,8 +35,8 @@ class Cliente:
 
             elif msg.startswith('/file '):
                 filename = msg.split('/file ')[1]
-                if filename == '':
-                    print('ERRO:msg inválida')
+                if not os.path.isfile(filename):
+                    print('ERRO: arquivo pedido não existe. Tente novamente.')
                     continue
                 msg = msg.replace('/file ', 'FILE:', 1)
                 self.udp.sendto(msg.encode(), self.dest)
@@ -51,18 +53,19 @@ class Cliente:
             elif msg.startswith('/get '):
                 filename = msg.split('/get ')[1]
                 if self.arq_pedido != '':
-                    print('Um arquivo de cada vez, afobado')
+                    print('Um arquivo de cada vez, afobado!')
                 elif filename == '' or filename != self.arquivo:
                     print('ERRO:get inválido')
                 else:
                     self.arq_pedido = filename
                     msg = msg.replace('/get ', 'GET:', 1)
                     self.udp.sendto(msg.encode(), self.dest)
-                # Recebimento do arquivo implementado na função receive (diretiva FILE)
+                # Recebimento do arquivo implementado abaixo na função receive (diretiva FILE)
 
             else:
                 msg = 'MSG:'+msg
                 self.udp.sendto(msg.encode(), self.dest)
+        
 
     def receive (self):
         while self.aberto:
@@ -91,7 +94,6 @@ class Cliente:
             
             elif msg[0] == 'BYE':
                 self.aberto = False
-                self.udp.close()
                 break
 
             elif msg[0] == 'FILE':
@@ -109,11 +111,14 @@ class Cliente:
                     self.tcp.close()
                     print(self.arq_pedido + ' recebido')
                     self.arq_pedido = ''
-
+        self.udp.close()
 
     def start(self):
         inp = input("Nome de usuário:")
         self.nome = inp.split(sep=':')[0]
+        while self.nome == ''  or ':' in self.nome:
+            inp = input('Nome inválido, digite novamente:')
+            self.nome = inp.split(sep=':')[0]
         msg = 'USER:'+self.nome
         self.udp.sendto (msg.encode(), self.dest)
         self.clientes = [inp.split(sep=':')[0]]
